@@ -1,25 +1,74 @@
 #!/usr/bin/env python3
 
-import collections
 import i3ipc
 import re
 import signal
 import sys
 import subprocess
+from dataclasses import dataclass
 from typing import Optional, List
 
-from config import DEFAULT_ICON
-from config import ICONS
+DEFAULT_ICON = "*"
+ICONS = {
+    "atril": "",
+    "blueberry.py": "",
+    "caja": "",
+    "code": "",
+    "crx_hnpfjngllnobngcgfapefoaidbinmjnm": "",
+    "engrampa": "",
+    "eom": "",
+    "et": "",
+    "evince": "",
+    "feh": "",
+    "firefox": "",
+    "gnome-disks": "",
+    "google-chrome": "",
+    "gparted": "",
+    "jdownloader": "ﰭ",
+    "jetbrains-studio": "",
+    "libreoffice-calc": "",
+    "libreoffice-impress": "",
+    "libreoffice-writer": "",
+    "mate-calc": "",
+    "mate-color-select": "",
+    "mate-connection-editor": "",
+    "mate-disk-usage-analyzer": "",
+    "mate-font-viewer": "",
+    "mate-mouse-properties": "",
+    "mate-network-properties": "",
+    "mate-screenshot": "",
+    "mate-search-tool": "",
+    "mate-terminal": "",
+    "mate-volume-control": "",
+    "mousepad": "",
+    "onboard": "",
+    "pavucontrol": "",
+    "pluma": "",
+    "sublime_text": "",
+    "steam": "",
+    "thunar": "",
+    "transmission-gtk": "ﰭ",
+    "wpp": "",
+    "wps": "",
+    "xfce4-terminal": "",
+    "xterm": "",
+    "urxvt": "",
+    "vlc": "嗢",
+}
 
-# A type that represents a parsed workspace "name"
-NameParts = collections.namedtuple('NameParts', ['num', 'short_name', 'icons'])
+# A dataclass that represents a parsed workspace "name"
+@dataclass
+class NameParts:
+    num: str
+    short_name: str
+    icons: Optional[str]
 
 
 def icon_for_window(con: i3ipc.Con) -> str:
     """
     Try all window classes and use the first one we have an icon for
     """
-    wm_classes = xprop(con.window, 'WM_CLASS') or []
+    wm_classes = xprop(con.window, "WM_CLASS") or []
 
     for wm_class in wm_classes:
         try:
@@ -27,11 +76,13 @@ def icon_for_window(con: i3ipc.Con) -> str:
         except KeyError:
             pass
 
-    print(f'No icon available for window with classes: {wm_classes}')
+    print(f"No icon available for window with classes: {wm_classes}")
     return DEFAULT_ICON
 
 
-def rename_workspaces(i3_conn: i3ipc.Connection, renumber_workspaces: bool = False) -> None:
+def rename_workspaces(
+    i3_conn: i3ipc.Connection, renumber_workspaces: bool = False
+) -> None:
     """
     Renames all workspaces based on the windows present.
     Renumbers them in ascending order, with one gap left between monitors.
@@ -42,7 +93,7 @@ def rename_workspaces(i3_conn: i3ipc.Connection, renumber_workspaces: bool = Fal
 
     for ws_info, ws in zip(i3_conn.get_workspaces(), i3_conn.get_tree().workspaces()):
         name_parts = parse_workspace_name(ws.name)
-        new_icons = " ".join([icon_for_window(w) for w in ws.leaves()]) + " "
+        new_icons = " ".join([icon_for_window(w) for w in ws.leaves()])
 
         # As we enumerate, leave one gap in workspace numbers between each monitor.
         # This leaves a space to insert a new one later.
@@ -55,9 +106,11 @@ def rename_workspaces(i3_conn: i3ipc.Connection, renumber_workspaces: bool = Fal
         n += 1
 
         new_name = construct_workspace_name(
-            NameParts(num=new_num if renumber_workspaces else ws.num,
-                      short_name=name_parts.short_name,
-                      icons=new_icons)
+            NameParts(
+                num=new_num if renumber_workspaces else ws.num,
+                short_name=name_parts.short_name,
+                icons=new_icons,
+            )
         )
 
         if ws.name != new_name:
@@ -71,16 +124,13 @@ def on_exit(i3_conn: i3ipc.Connection) -> None:
     for workspace in i3_conn.get_tree().workspaces():
         name_parts = parse_workspace_name(workspace.name)
         new_name = construct_workspace_name(
-            NameParts(num=name_parts.num,
-                      short_name=name_parts.short_name,
-                      icons=None)
+            NameParts(num=name_parts.num, short_name=name_parts.short_name, icons=None)
         )
 
         if workspace.name is not new_name:
             i3_conn.command(f'rename workspace "{workspace.name}" to "{new_name}"')
 
     i3_conn.main_quit()
-    sys.exit(0)
 
 
 def focused_workspace(i3_conn: i3ipc.Connection) -> i3ipc.WorkspaceReply:
@@ -96,8 +146,11 @@ def parse_workspace_name(name: str) -> NameParts:
     - short_name: the workspace name (assumed to have no spaces)
     - icons: the string that comes after the name
     """
-    match = re.match(r'(?P<num>\d+):?(?P<short_name>\w+)? ?(?P<icons>.+)?', name).groupdict()
-    return NameParts(**match)
+    match = re.match(r"(?P<num>\d+):?(?P<short_name>\w+)? ?(?P<icons>.+)?", name)
+    if match is not None:
+        return NameParts(**match.groupdict())
+    else:
+        return NameParts("", "", "")
 
 
 def construct_workspace_name(parts: NameParts) -> str:
@@ -107,27 +160,26 @@ def construct_workspace_name(parts: NameParts) -> str:
     new_name = str(parts.num)
 
     if parts.short_name or parts.icons:
-        new_name += ':'
+        new_name += ":"
 
         if parts.short_name:
             new_name += parts.short_name
 
         if parts.icons:
-            new_name += ' ' + parts.icons
+            new_name += f" {parts.icons}"
 
     return new_name
 
 
-def xprop(win_id, xproperty: str) -> Optional[List[str]]:
+def xprop(win_id: int, xproperty: str) -> Optional[List[str]]:
     """
     Return an array of values for the X property on the given window.
     Requires xorg-xprop to be installed.
     """
     try:
         prop = subprocess.check_output(
-            ['xprop', '-id', str(win_id), xproperty],
-            stderr=subprocess.DEVNULL
-        ).decode('utf-8')
+            ["xprop", "-id", str(win_id), xproperty], stderr=subprocess.DEVNULL
+        ).decode("utf-8")
 
         return re.findall('"([^"]+)"', prop)
 
@@ -139,7 +191,7 @@ def xprop(win_id, xproperty: str) -> Optional[List[str]]:
 def main() -> None:
     i3_conn = i3ipc.Connection()
 
-    # Exit gracefully when Ctrl+C is pressed
+    # exit gracefully when Ctrl+C is pressed
     for sig in (signal.SIGINT, signal.SIGTERM):
         signal.signal(sig, lambda *_: on_exit(i3_conn))
 
@@ -149,13 +201,13 @@ def main() -> None:
         """
         Call rename_workspaces() for relevant window events
         """
-        if evt.change in ('new', 'close', 'move'):
+        if evt.change in ("new", "close", "move"):
             rename_workspaces(i3_conn)
 
-    i3_conn.on('window', event_handler)
-    i3_conn.on('workspace::move', event_handler)
+    i3_conn.on("window", event_handler)
+    i3_conn.on("workspace::move", event_handler)
     i3_conn.main()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
