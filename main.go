@@ -120,7 +120,11 @@ func getWinIcon(prop *i3.WindowProperties) string {
 		return "\uf07b"
 	case "Io.github.celluloid_player.Celluloid":
 		return "\uf144"
-	case "Chromium-browser":
+	case "Code", "Codium", "VSCodium":
+		return "\ue70c"
+	case "Firefox":
+		return "\uf738"
+	case "Google-chrome", "Chromium-browser":
 		switch prop.Instance {
 		// WhatsApp
 		case "crx_hnpfjngllnobngcgfapefoaidbinmjnm":
@@ -128,10 +132,6 @@ func getWinIcon(prop *i3.WindowProperties) string {
 		default:
 			return "\uf268"
 		}
-	case "Code", "Codium", "VSCodium":
-		return "\ue70c"
-	case "Firefox":
-		return "\uf738"
 	case "KeePassXC":
 		return "\uf43d"
 	case "Mate-screenshot":
