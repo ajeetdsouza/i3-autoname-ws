@@ -58,7 +58,7 @@ func renameAllWs() error {
 	return err
 }
 
-func clearAllWs() error {
+func resetWsName() error {
 	ws, err := i3.GetWorkspaces()
 	if err != nil {
 		return err
@@ -155,17 +155,23 @@ func getWinIcon(prop *i3.WindowProperties) string {
 }
 
 func main() {
+	// The script relies on workspace ID which was added in i3wm v4.18.0
+	if err := i3.AtLeast(4, 18); err != nil {
+		log.Fatal(err)
+	}
+
 	sigChan := make(chan os.Signal)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-sigChan
-		clearAllWs()
+		if err := resetWsName(); err != nil {
+			log.Fatalf("failed to clear all workspaces: %s", err)
+		}
 		os.Exit(1)
 	}()
 
-	err := renameAllWs()
-	if err != nil {
-		log.Print(err)
+	if err := renameAllWs(); err != nil {
+		log.Printf("failed to rename all workspaces: %s", err)
 	}
 
 	subscriber := i3.Subscribe(
@@ -191,9 +197,8 @@ func main() {
 			log.Printf("received event of type: %T", event)
 		}
 
-		err := renameAllWs()
-		if err != nil {
-			log.Print(err)
+		if err := renameAllWs(); err != nil {
+			log.Fatal(err)
 		}
 	}
 }

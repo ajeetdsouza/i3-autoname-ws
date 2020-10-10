@@ -1,6 +1,7 @@
 # i3-autoname-ws
 
 Listens for [i3](https://github.com/i3/i3) events and renames workspaces to show the icons of running programs.
+It requires i3 >= 4.18.
 
 # Installation
 
