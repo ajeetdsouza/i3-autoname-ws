@@ -107,24 +107,22 @@ func getWsName(node *i3.Node, wsNum int64) string {
 }
 
 func getWinIcon(prop *i3.WindowProperties) string {
-	switch prop.Class {
-	case "Arandr":
+	switch strings.ToLower(prop.Class) {
+	case "arandr":
 		return "\uf878"
-	case "Atril":
+	case "atril":
 		return "\uf725"
-	case "Audacity":
+	case "audacity":
 		return "\uf025"
-	case "Blueberry.py":
+	case "blueberry.py":
 		return "\uf293"
-	case "Caja":
+	case "caja", "thunar":
 		return "\uf07b"
-	case "Io.github.celluloid_player.Celluloid":
-		return "\uf144"
-	case "Code", "Codium", "VSCodium":
+	case "code", "codium", "vscodium":
 		return "\ue70c"
-	case "Firefox":
+	case "firefox":
 		return "\uf738"
-	case "Google-chrome", "Chromium-browser":
+	case "google-chrome", "chromium-browser":
 		switch prop.Instance {
 		// WhatsApp
 		case "crx_hnpfjngllnobngcgfapefoaidbinmjnm":
@@ -132,20 +130,40 @@ func getWinIcon(prop *i3.WindowProperties) string {
 		default:
 			return "\uf268"
 		}
-	case "KeePassXC":
+	case "io.github.celluloid_player.celluloid":
+		return "\uf144"
+	case "jetbrains-idea":
+		return "\ue7b5"
+	case "keepassxc":
 		return "\uf43d"
-	case "Mate-screenshot":
-		return "\uf5ff"
-	case "Mate-terminal", "Xfce4-terminal":
+	case "kitty", "mate-terminal", "xfce4-terminal":
 		return "\ue795"
-	case "Mate-volume-control":
+	case "mate-screenshot":
+		return "\uf5ff"
+	case "mate-volume-control":
 		return "\uf9c2"
-	case "RosaImageWriter":
+	case "obsidian":
+		return "\uf249"
+	case "pavucontrol":
+		return "\uf9c2"
+	case "postman":
+		return "\uf14c"
+	case "rosaimagewriter":
 		return "\ufaed"
-	case "Transmission-gtk":
+	case "slack":
+		return "\uf198"
+	case "spotify":
+		return "\uf1bc"
+	case "transmission-gtk", "qbittorrent":
 		return "\uf019"
-	case "VirtualBox", "VirtualBox Machine", "VirtualBox Manager", "VirtualBoxVM":
+	case "virtualbox", "virtualbox machine", "virtualbox manager", "virtualboxvm":
 		return "\uf6a6"
+	case "vlc":
+		return "\ufa7b"
+	case "woeusbgui":
+		return "\uf287"
+	case "xarchiver":
+		return "\uf187"
 	case "zoom":
 		return "\uf03d"
 	default:
@@ -160,7 +178,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	sigChan := make(chan os.Signal)
+	sigChan := make(chan os.Signal, 5)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-sigChan
