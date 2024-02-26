@@ -1,3 +1,8 @@
+> [!WARNING]  
+> This repository is deprecated in favor of [roosta/i3wsr](https://github.com/roosta/i3wsr).
+
+---
+
 # i3-autoname-ws
 
 Listens for [i3](https://github.com/i3/i3) events and renames workspaces to show the icons of running programs.
